@@ -8,8 +8,7 @@
 
 @property (copy) DownloadParams* params;
 
-@property (retain) NSURLSession* session;
-@property (retain) NSURLSessionTask* task;
+@property (retain) NSURLConnection* connection;
 @property (retain) NSNumber* statusCode;
 @property (retain) NSNumber* contentLength;
 @property (retain) NSNumber* bytesWritten;
@@ -23,76 +22,70 @@
 - (void)downloadFile:(DownloadParams*)params
 {
   _params = params;
-
+  
   _bytesWritten = 0;
 
   NSURL* url = [NSURL URLWithString:_params.fromUrl];
 
+  NSMutableURLRequest* downloadRequest = [NSMutableURLRequest requestWithURL:url
+                                                                 cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                                             timeoutInterval:30];
+
   [[NSFileManager defaultManager] createFileAtPath:_params.toFile contents:nil attributes:nil];
+
   _fileHandle = [NSFileHandle fileHandleForWritingAtPath:_params.toFile];
 
   if (!_fileHandle) {
-    NSError* error = [NSError errorWithDomain:@"Downloader" code:NSURLErrorFileDoesNotExist
-                              userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat: @"Failed to create target file at path: %@", _params.toFile]}];
+    NSError* error = [NSError errorWithDomain:@"Downloader" code:NSURLErrorFileDoesNotExist userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat: @"Failed to create target file at path: %@", _params.toFile]}];
 
     return _params.errorCallback(error);
-  } else {
-    [_fileHandle closeFile];
   }
 
-  NSURLSessionConfiguration *config;
-  if (_params.background) {
-    NSString *uuid = [[NSUUID UUID] UUIDString];
-    config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:uuid];
-  } else {
-    config = [NSURLSessionConfiguration defaultSessionConfiguration];
-  }
+  _connection = [[NSURLConnection alloc] initWithRequest:downloadRequest delegate:self startImmediately:NO];
 
-  config.HTTPAdditionalHeaders = _params.headers;
+  [_connection scheduleInRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 
-  _session = [NSURLSession sessionWithConfiguration:config delegate:self delegateQueue:nil];
-  _task = [_session downloadTaskWithURL:url];
-  [_task resume];
+  [_connection start];
 }
 
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
+- (void)connection:(NSURLConnection*)connection didFailWithError:(NSError*)error
 {
-  NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)downloadTask.response;
-  if (!_statusCode) {
-    _statusCode = [NSNumber numberWithLong:httpResponse.statusCode];
-    _contentLength = [NSNumber numberWithLong:httpResponse.expectedContentLength];
-    return _params.beginCallback(_statusCode, _contentLength, httpResponse.allHeaderFields);
-  }
+  [_fileHandle closeFile];
 
+  return _params.errorCallback(error);
+}
+
+- (void)connection:(NSURLConnection*)connection didReceiveResponse:(NSURLResponse*)response
+{
+  NSHTTPURLResponse* httpUrlResponse = (NSHTTPURLResponse*)response;
+
+  _statusCode = [NSNumber numberWithLong:httpUrlResponse.statusCode];
+  _contentLength = [NSNumber numberWithLong: httpUrlResponse.expectedContentLength];
+  
+  return _params.beginCallback(_statusCode, _contentLength, httpUrlResponse.allHeaderFields);
+}
+
+- (void)connection:(NSURLConnection*)connection didReceiveData:(NSData*)data
+{
   if ([_statusCode isEqualToNumber:[NSNumber numberWithInt:200]]) {
-    _bytesWritten = @(totalBytesWritten);
+    [_fileHandle writeData:data];
+
+    _bytesWritten = [NSNumber numberWithUnsignedInteger:[_bytesWritten unsignedIntegerValue] + data.length];
+
     return _params.progressCallback(_contentLength, _bytesWritten);
   }
 }
 
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location
+- (void)connectionDidFinishLoading:(NSURLConnection*)connection
 {
-  NSURL *destURL = [NSURL fileURLWithPath:_params.toFile];
-  NSFileManager *fm = [NSFileManager defaultManager];
-  NSError *error = nil;
-  [fm removeItemAtURL:destURL error:nil];       // Remove file at destination path, if it exists
-  [fm moveItemAtURL:location toURL:destURL error:&error];
-  if (error) {
-    NSLog(@"RNFS download: unable to move tempfile to destination. %@, %@", error, error.userInfo);
-  }
+  [_fileHandle closeFile];
 
-  return _params.completeCallback(_statusCode, _bytesWritten);
+  return _params.callback(_statusCode, _bytesWritten);
 }
-
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionTask *)downloadTask didCompleteWithError:(NSError *)error
-{
-  return _params.errorCallback(error);
-}
-
 
 - (void)stopDownload
 {
-  [_task cancel];
+  [_connection cancel];
 }
 
 @end
