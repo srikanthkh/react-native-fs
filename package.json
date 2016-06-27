@@ -1,15 +1,66 @@
 {
-  "name": "react-native-fs",
-  "version": "1.5.1",
+  "_args": [
+    [
+      "react-native-fs@^1.5.1",
+      "/Users/vidao/work/mobile"
+    ]
+  ],
+  "_from": "react-native-fs@>=1.5.1 <2.0.0",
+  "_id": "react-native-fs@1.5.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/react-native-fs",
+  "_nodeVersion": "4.3.0",
+  "_npmOperationalInternal": {
+    "host": "packages-12-west.internal.npmjs.com",
+    "tmp": "tmp/react-native-fs-1.5.1.tgz_1465212589007_0.07585787470452487"
+  },
+  "_npmUser": {
+    "email": "johannes@johanneslumpe.de",
+    "name": "johanneslumpe"
+  },
+  "_npmVersion": "2.14.12",
+  "_phantomChildren": {},
+  "_requested": {
+    "name": "react-native-fs",
+    "raw": "react-native-fs@^1.5.1",
+    "rawSpec": "^1.5.1",
+    "scope": null,
+    "spec": ">=1.5.1 <2.0.0",
+    "type": "range"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/react-native-fs/-/react-native-fs-1.5.1.tgz",
+  "_shasum": "5f98a3d59eb6d27d1217b720a31d10fe576b57c4",
+  "_shrinkwrap": null,
+  "_spec": "react-native-fs@^1.5.1",
+  "_where": "/Users/vidao/work/mobile",
+  "author": {
+    "email": "johannes@lum.pe",
+    "name": "Johannes Lumpe",
+    "url": "https://github.com/johanneslumpe"
+  },
+  "bugs": {
+    "url": "https://github.com/johanneslumpe/react-native-fs/issues"
+  },
+  "dependencies": {
+    "base-64": "^0.1.0",
+    "bluebird": "^2.9.25",
+    "utf8": "^2.1.1"
+  },
   "description": "Native filesystem access for react-native",
-  "main": "FS.common.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "devDependencies": {
+    "react-native": "*"
   },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:johanneslumpe/react-native-fs.git"
+  "directories": {},
+  "dist": {
+    "shasum": "5f98a3d59eb6d27d1217b720a31d10fe576b57c4",
+    "tarball": "https://registry.npmjs.org/react-native-fs/-/react-native-fs-1.5.1.tgz"
   },
+  "gitHead": "6c6fd490602de9c645510b0f5b55cc39c696a68f",
+  "homepage": "https://github.com/johanneslumpe/react-native-fs#readme",
   "keywords": [
     "react-component",
     "react-native",
@@ -18,14 +69,27 @@
     "fs",
     "filesystem"
   ],
-  "author": "Johannes Lumpe <johannes@lum.pe> (https://github.com/johanneslumpe)",
   "license": "MIT",
-  "dependencies": {
-    "base-64": "^0.1.0",
-    "bluebird": "^2.9.25",
-    "utf8": "^2.1.1"
+  "main": "FS.common.js",
+  "maintainers": [
+    {
+      "email": "me@chrisdell.info",
+      "name": "cjdell"
+    },
+    {
+      "email": "johannes@johanneslumpe.de",
+      "name": "johanneslumpe"
+    }
+  ],
+  "name": "react-native-fs",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/johanneslumpe/react-native-fs.git"
   },
-  "devDependencies": {
-    "react-native": "*"
-  }
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.5.1"
 }

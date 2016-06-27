@@ -12,12 +12,9 @@ import java.net.URLConnection;
 import java.net.HttpURLConnection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import android.util.Log;
-
+import android.net.Uri;
+import android.webkit.CookieManager;
 import android.os.AsyncTask;
-
-import com.facebook.react.bridge.ReadableMapKeySetIterator;
 
 public class Downloader extends AsyncTask<DownloadParams, int[], DownloadResult> {
   private DownloadParams mParam;
@@ -43,18 +40,12 @@ public class Downloader extends AsyncTask<DownloadParams, int[], DownloadResult>
   private void download(DownloadParams param, DownloadResult res) throws IOException {
     InputStream input = null;
     OutputStream output = null;
-    HttpURLConnection connection = null;
 
     try {
-      connection = (HttpURLConnection)param.src.openConnection();
-
-      ReadableMapKeySetIterator iterator = param.headers.keySetIterator();
-
-      while (iterator.hasNextKey()) {
-        String key = iterator.nextKey();
-        String value = param.headers.getString(key);
-        connection.setRequestProperty(key, value);
-      }
+      HttpURLConnection connection = (HttpURLConnection)param.src.openConnection();
+      CookieManager cookieManager = CookieManager.getInstance();
+      String cookie = cookieManager.getCookie("https://files.xdesign.vidao.com");
+      connection.setRequestProperty("Cookie", cookie);
 
       connection.setConnectTimeout(5000);
       connection.connect();
@@ -62,39 +53,17 @@ public class Downloader extends AsyncTask<DownloadParams, int[], DownloadResult>
       int statusCode = connection.getResponseCode();
       int lengthOfFile = connection.getContentLength();
 
-      boolean isRedirect = (
-        statusCode != HttpURLConnection.HTTP_OK &&
-        (
-          statusCode == HttpURLConnection.HTTP_MOVED_PERM ||
-          statusCode == HttpURLConnection.HTTP_MOVED_TEMP
-        )
-      );
-
-      if (isRedirect) {
-        String redirectURL = connection.getHeaderField("Location");
-        connection.disconnect();
-
-        connection = (HttpURLConnection) new URL(redirectURL).openConnection();
-        connection.setConnectTimeout(5000);
-        connection.connect();
-
-        statusCode = connection.getResponseCode();
-        lengthOfFile = connection.getContentLength();
-      }
-
       Map<String, List<String>> headers = connection.getHeaderFields();
 
       Map<String, String> headersFlat = new HashMap<String, String>();
-
       for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
         String headerKey = entry.getKey();
         String valueKey = entry.getValue().get(0);
-
+        
         if (headerKey != null && valueKey != null) {
           headersFlat.put(headerKey, valueKey);
         }
       }
-
       mParam.onDownloadBegin.onDownloadBegin(statusCode, lengthOfFile, headersFlat);
 
       input = new BufferedInputStream(connection.getInputStream(), 8 * 1024);
@@ -103,7 +72,6 @@ public class Downloader extends AsyncTask<DownloadParams, int[], DownloadResult>
       byte data[] = new byte[8 * 1024];
       int total = 0;
       int count;
-      double lastProgressValue = 0;
 
       while ((count = input.read(data)) != -1) {
         if (mAbort.get()) {
@@ -111,18 +79,7 @@ public class Downloader extends AsyncTask<DownloadParams, int[], DownloadResult>
         }
 
         total += count;
-        if (param.progressDivider <= 1) {
-            publishProgress(new int[]{lengthOfFile, total});
-        } else {
-            double progress = Math.round(((double) total * 100) / lengthOfFile);
-            if (progress % param.progressDivider == 0) {
-                if ((progress != lastProgressValue) || (total == lengthOfFile)) {
-                    Log.d("Downloader", "EMIT: " + String.valueOf(progress) + ", TOTAL:" + String.valueOf(total));
-                    lastProgressValue = progress;
-                    publishProgress(new int[]{lengthOfFile, total});
-                }
-            }
-        }
+        publishProgress(new int[] { lengthOfFile, total });
         output.write(data, 0, count);
       }
 
@@ -133,7 +90,6 @@ public class Downloader extends AsyncTask<DownloadParams, int[], DownloadResult>
     } finally {
       if (output != null) output.close();
       if (input != null) input.close();
-      if (connection != null) connection.disconnect();
     }
   }
 

@@ -15,7 +15,6 @@ typedef void (^ProgressCallback)(NSNumber*, NSNumber*);
 @property (copy) BeginCallback beginCallback;                 // Download has started (headers received)
 @property (copy) ProgressCallback progressCallback;           // Download is progressing
 @property        bool background;                             // Whether to continue download when app is in background
-@property (copy) NSNumber* progressDivider;
 
 
 @end

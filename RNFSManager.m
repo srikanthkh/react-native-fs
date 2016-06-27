@@ -186,8 +186,6 @@ RCT_EXPORT_METHOD(downloadFile:(NSDictionary *)options
   params.headers = headers;
   NSNumber* background = options[@"background"];
   params.background = [background boolValue];
-  NSNumber* progressDivider = options[@"progressDivider"];
-  params.progressDivider = progressDivider;
 
   params.completeCallback = ^(NSNumber* statusCode, NSNumber* bytesWritten) {
     NSMutableDictionary* result = [[NSMutableDictionary alloc] initWithDictionary: @{@"jobId": jobId,
@@ -250,15 +248,9 @@ RCT_EXPORT_METHOD(uploadFiles:(NSDictionary *)options
   params.fields = fields;
   params.method = method;
 
-  params.completeCallback = ^(NSString* body, NSURLResponse *resp) {
-
+  params.completeCallback = ^(NSString* response) {
     NSMutableDictionary* result = [[NSMutableDictionary alloc] initWithDictionary: @{@"jobId": jobId,
-                                                                                     @"body": body,
-                                                                                     @"response": body}];
-    if ([resp isKindOfClass:[NSHTTPURLResponse class]]) {
-      [result setValue:((NSHTTPURLResponse *)resp).allHeaderFields forKey:@"headers"];
-      [result setValue:[NSNumber numberWithUnsignedInteger:((NSHTTPURLResponse *)resp).statusCode] forKey:@"statusCode"];
-    }
+                             @"response": response}];
     return callback(@[[NSNull null], result]);
   };
 

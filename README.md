@@ -198,6 +198,16 @@ var files = [
     filetype: 'audio/x-m4a'
   }
 ];
+// create an object of options
+var options = {
+  method: 'POST',
+  headers: {
+    'Accept': 'application/json',
+  },
+  fields: {
+    'hello': 'world',
+  }
+};
 
 var uploadBegin = (response) => {
   var jobId = response.jobId;
@@ -210,25 +220,9 @@ var uploadProgress = (response) => {
 };
 
 // upload files
-RNFS.uploadFiles({
-    toUrl: uploadUrl,
-    files: files,
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-    },
-    fields: {
-      'hello': 'world',
-    },
-    begin: uploadBegin,
-    progress: uploadProgress
-  })
+RNFS.uploadFiles(uploadUrl, files, options, uploadBegin, uploadProgress)
   .then((response) => {
-    if (response.statusCode == 200) {
-      console.log('FILES UPLOADED!'); // response.statusCode, response.headers, response.body
-    } else {
-      console.log('SERVER ERROR');
-    }
+    console.log('FILES UPLOADED!');
   })
   .catch((err) => {
     if(err.description === "cancelled") {
@@ -322,7 +316,6 @@ Create a directory at `filepath`. Automatically creates parents and does not thr
   toFile (String) - Local filesystem path to save the file to
   headers (Object) - (Optional) An object of headers to be passed to the server
   background (Boolean) - (Optional) See below
-  progressDivider (Number) - (Optional) See below
   begin (Function) - (Optional) See below
   progress (Function) - (Optional) See below
 }
@@ -342,11 +335,7 @@ If `options.progress` is provided, it will be invoked continuously and passed a 
 `contentLength` (`Number`) - The total size in bytes of the download resource
 `bytesWritten` (`Number`) - The number of bytes written to the file so far
 
-If `options.progressDivider`(`Number`) is provided, it will return progress events that divided by progressDivider
-
-For example, if `progressDivider` = 10, you will receive only ten callbacks for this values of progress: 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100
-Use it for performance issues.
-If `progressDivider` = 1, you will receive all `progressCallback` calls, default value is 1.
+Percentage can be computed easily by dividing `bytesWritten` by `contentLength`.
 
 (IOS only): `options.background` (`Boolean`) - Whether to continue downloads when the app is not focused (default: `false`)
                            This option is currently only available for iOS, and you must [enable
@@ -364,7 +353,7 @@ Abort the current download job with this ID. The partial file will remain on the
 
 ```
 {
-  toUrl (String) - URL to upload file to
+  url (String) - URL to upload file to
   files (Array) - An array of objects with the file information to be uploaded.
   method (String) - (Optional) Default is 'POST', supports 'POST' and 'PUT'
   headers (Object) - (Optional) An object of headers to be passed to the server
